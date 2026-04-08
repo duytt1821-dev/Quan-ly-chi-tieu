@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card">
+    <h2 class="section-title">Thêm giao dịch</h2>
+    <form action="{{ url_for('add_expense') }}" method="POST" class="grid-form">
+        <select name="transaction_type" required>
+            <option value="chi">Chi tiền (-)</option>
+            <option value="thu">Thu tiền (+)</option>
+        </select>
+        <select name="payment_method" required>
+            <option value="tien_mat">Tiền mặt</option>
+            <option value="ngan_hang">Ngân hàng</option>
+        </select>
+        <input type="number" step="0.01" name="amount" placeholder="Số tiền" required />
+        <select name="category" required>
+            <option value="">Chọn danh mục</option>
+            <option value="Ăn uống">Ăn uống</option>
+            <option value="Di chuyển">Di chuyển</option>
+            <option value="Học tập">Học tập</option>
+            <option value="Giải trí">Giải trí</option>
+            <option value="Mua sắm">Mua sắm</option>
+            <option value="Khác">Khác</option>
+        </select>
+        <input type="text" name="note" placeholder="Ghi chú (không bắt buộc)" />
+        <input type="date" name="expense_date" required />
+        <button type="submit">Thêm</button>
+    </form>
+</div>
+
+<div class="card">
+    <h2 class="section-title">Lọc theo ngày</h2>
+    <form action="{{ url_for('index') }}" method="GET" class="inline-form">
+        <label>Từ ngày:</label>
+        <input type="date" name="start_date" value="{{ start_date }}" />
+        <label>Đến ngày:</label>
+        <input type="date" name="end_date" value="{{ end_date }}" />
+        <button type="submit">Áp dụng</button>
+        <a href="{{ url_for('index') }}" class="btn-secondary">Xóa lọc</a>
+    </form>
+</div>
+
+<div class="summary-card">
+    <h2 class="section-title">Số dư (Thu - Chi)</h2>
+    <p class="total-value {% if total < 0 %}negative{% else %}positive{% endif %}">
+        {{ "+" if total >= 0 else "-" }}${{ "%.2f"|format(total|abs) }}
+    </p>
+</div>
+
+<div class="card stats-grid">
+    <div class="mini-stat">
+        <h2>Số dư tiền mặt hiện tại</h2>
+        <p class="total-value {% if cash_balance < 0 %}negative{% else %}positive{% endif %}">
+            {{ "+" if cash_balance >= 0 else "-" }}${{ "%.2f"|format(cash_balance|abs) }}
+        </p>
+    </div>
+    <div class="mini-stat">
+        <h2>Số dư tài khoản hiện tại</h2>
+        <p class="total-value {% if bank_balance < 0 %}negative{% else %}positive{% endif %}">
+            {{ "+" if bank_balance >= 0 else "-" }}${{ "%.2f"|format(bank_balance|abs) }}
+        </p>
+    </div>
+    <div class="mini-stat">
+        <h2>Tổng thu</h2>
+        <p class="total-value positive">+${{ "%.2f"|format(total_income) }}</p>
+    </div>
+    <div class="mini-stat">
+        <h2>Tổng chi</h2>
+        <p class="total-value negative">-${{ "%.2f"|format(total_expense) }}</p>
+    </div>
+    <div class="mini-stat">
+        <h2>Tuần này</h2>
+        <p class="total-value {% if week_total < 0 %}negative{% else %}positive{% endif %}">
+            {{ "+" if week_total >= 0 else "-" }}${{ "%.2f"|format(week_total|abs) }}
+        </p>
+    </div>
+    <div class="mini-stat">
+        <h2>Tháng này</h2>
+        <p class="total-value {% if month_total < 0 %}negative{% else %}positive{% endif %}">
+            {{ "+" if month_total >= 0 else "-" }}${{ "%.2f"|format(month_total|abs) }}
+        </p>
+    </div>
+</div>
+
+<div class="card">
+    <h2 class="section-title">Danh sách giao dịch</h2>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Mã</th>
+                    <th>Loại</th>
+                    <th>Nguồn tiền</th>
+                    <th>Số tiền</th>
+                    <th>Danh mục</th>
+                    <th>Ghi chú</th>
+                    <th>Ngày</th>
+                    <th>Số dư sau GD</th>
+                    <th>Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for expense in expenses %}
+                <tr>
+                    <td>{{ expense.id }}</td>
+                    <td>
+                        <span class="badge {% if expense.transaction_type == 'thu' %}badge-green{% else %}badge-red{% endif %}">
+                            {{ "Thu" if expense.transaction_type == "thu" else "Chi" }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge badge-gray">
+                            {{ "Ngân hàng" if expense.payment_method == "ngan_hang" else "Tiền mặt" }}
+                        </span>
+                    </td>
+                    <td class="{% if expense.transaction_type == 'thu' %}positive{% else %}negative{% endif %}">
+                        {{ "+" if expense.transaction_type == "thu" else "-" }}${{ "%.2f"|format(expense.amount) }}
+                    </td>
+                    <td>{{ expense.category }}</td>
+                    <td>{{ expense.note }}</td>
+                    <td>{{ expense.expense_date }}</td>
+                    <td class="balance-cell">
+                        {% if expense.payment_method == "ngan_hang" %}
+                            <span>TK: {{ "+" if expense.bank_after >= 0 else "-" }}${{ "%.2f"|format(expense.bank_after|abs) }}</span>
+                        {% else %}
+                            <span>TM: {{ "+" if expense.cash_after >= 0 else "-" }}${{ "%.2f"|format(expense.cash_after|abs) }}</span>
+                        {% endif %}
+                        <span class="balance-total">Tổng: {{ "+" if expense.total_after >= 0 else "-" }}${{ "%.2f"|format(expense.total_after|abs) }}</span>
+                    </td>
+                    <td class="actions">
+                        <a href="{{ url_for('edit_expense', expense_id=expense.id) }}">Sửa</a>
+                        <form action="{{ url_for('delete_expense', expense_id=expense.id) }}" method="POST" onsubmit="return confirm('Bạn chắc chắn muốn xóa khoản chi này?');">
+                            <button type="submit" class="danger-btn">Xóa</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="9" class="empty">Chưa có dữ liệu giao dịch.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card">
+    <h2 class="section-title">Biểu đồ chi tiêu theo tuần</h2>
+    <canvas id="weeklyChart"></canvas>
+</div>
+
+<div class="card">
+    <h2 class="section-title">Biểu đồ chi tiêu theo tháng</h2>
+    <canvas id="monthlyChart"></canvas>
+</div>
+{% endblock %}

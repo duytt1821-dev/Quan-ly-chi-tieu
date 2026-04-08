@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card">
+    <h2>Sửa giao dịch #{{ expense.id }}</h2>
+    <form method="POST" class="grid-form">
+        <select name="transaction_type" required>
+            <option value="chi" {% if expense.transaction_type == "chi" %}selected{% endif %}>
+                Chi tiền (-)
+            </option>
+            <option value="thu" {% if expense.transaction_type == "thu" %}selected{% endif %}>
+                Thu tiền (+)
+            </option>
+        </select>
+        <select name="payment_method" required>
+            <option value="tien_mat" {% if expense.payment_method == "tien_mat" %}selected{% endif %}>
+                Tiền mặt
+            </option>
+            <option value="ngan_hang" {% if expense.payment_method == "ngan_hang" %}selected{% endif %}>
+                Ngân hàng
+            </option>
+        </select>
+        <input
+            type="number"
+            step="0.01"
+            name="amount"
+            value="{{ expense.amount }}"
+            required
+        />
+        <select name="category" required>
+            {% set options = ['Ăn uống', 'Di chuyển', 'Học tập', 'Giải trí', 'Mua sắm', 'Khác'] %}
+            {% for option in options %}
+                <option value="{{ option }}" {% if expense.category == option %}selected{% endif %}>
+                    {{ option }}
+                </option>
+            {% endfor %}
+        </select>
+        <input type="text" name="note" value="{{ expense.note }}" placeholder="Ghi chú" />
+        <input type="date" name="expense_date" value="{{ expense.expense_date }}" required />
+        <button type="submit">Cập nhật</button>
+    </form>
+    <a href="{{ url_for('index') }}" class="btn-secondary">Quay lại trang chủ</a>
+</div>
+{% endblock %}
